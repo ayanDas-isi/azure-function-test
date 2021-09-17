@@ -5,3 +5,4 @@
 azure-functions
 ibm-cos-sdk
 pandas
+pymongo
