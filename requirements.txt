@@ -8,3 +8,4 @@ pandas
 pymongo
 azure-storage-blob
 mftool
+bokeh==1.2.0
