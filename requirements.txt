@@ -7,3 +7,4 @@ ibm-cos-sdk
 pandas
 pymongo
 azure-storage-blob
+mftool
