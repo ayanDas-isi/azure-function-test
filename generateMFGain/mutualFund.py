@@ -58,14 +58,13 @@ def get_start_nav(today,data,startDate):
     return float(nav),endNAV
 
 def get_date_unit(today,code,amount):
-    path='./nav/data_'+str(code)+'_'+str(datetime.datetime.today().date())+'.json'
-    if os.path.exists(path)==True:
-        f = open(path)
-        data = json.load(f)
+    path='data_'+str(code)+'_'+str(today.date())
+    
+    if path in mfData.keys():
+        data = mfData[path]
     else:
         data = obj.get_scheme_historical_nav(code=code)
-        with open(path, 'w') as f:
-            json.dump(data, f)
+        mfData[path]=data
     nav=0
     #print(monthStart)
     for dtval in data['data']:
