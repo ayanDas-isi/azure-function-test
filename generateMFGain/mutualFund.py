@@ -115,22 +115,22 @@ def last_day_gain(row,unit):
     data=row['data']
     return (float(data[0]['nav']) - float(data[1]['nav']))*unit
 
+mfData=dict()
+
 def get_gain(row):
     today=datetime.datetime.today()
     monthStart=datetime.datetime(today.year,today.month,1)
     yearStart=datetime.datetime(today.year,1,1)
-    path='./nav/data_'+str(row['code'])+'_'+str(today.date())+'.json'
+    path='data_'+str(row['code'])+'_'+str(today.date())
     if type(row['purchaseDate'])==str:
         purDate =datetime.datetime.strptime(row['purchaseDate'], '%d-%m-%Y')
     else:
         purDate = row['purchaseDate']#datetime.datetime.strptime(row['purchaseDate'], '%d-%m-%Y')
-    if os.path.exists(path)==True:
-        f = open(path)
-        data = json.load(f)
+    if path in mfData.keys():
+        data = mfData[path]
     else:
         data = obj.get_scheme_historical_nav(code=row['code'])
-        with open(path, 'w') as f:
-            json.dump(data, f)
+        mfData[path]=data
     recentInc,pastInc=get_recent_increase(data['data'])
     lastDGain=last_day_gain(data,row['units'])
     print(row['fundName'])
