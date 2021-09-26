@@ -10,6 +10,15 @@ import datetime
 import json
 from .daoLayer import pull_data
 import os
+import glob
+from . import storeDF
+
+def deleteall():
+    files = glob.glob('./nav/')
+    for f in files:
+        os.remove(f)
+    
+    
 obj = Mftool()
 
 data = obj.get_scheme_codes() 
@@ -181,4 +190,6 @@ def evaluate():
     holdings[['monthly_gain','yearly_gain','incPercent','yrIncPercent','recentInc','pastInc','lastDGain']]=holdings.apply(get_gain,axis=1,result_type="expand")
     print(f'total monthly gain {round(sum(holdings["monthly_gain"])/1000.0,2)}k ,yearly gain {round(sum(holdings["yearly_gain"])/1000.0,2)}k')
     holdings.to_csv('allfunds_gain.csv')
+    #deleteall()
+    storeDF.storeDF(holdings)
     
