@@ -23,6 +23,7 @@ obj = Mftool()
 
 data = obj.get_scheme_codes() 
 #print(data)
+mfData=dict()
 
 def get_fund(fname,fundType='Direct Plan',scheme='Growth'):
     fname=fname.lower()
@@ -95,7 +96,7 @@ def addSIP(calcDate,holdings):
             print(startDate,row['code'])
     sipList=pd.DataFrame(sipList)
     holdings=pd.concat([holdings,sipList])
-    holdings.to_csv('holdings_sip.csv')
+    #holdings.to_csv('holdings_sip.csv')
     return holdings
     
 
@@ -114,7 +115,6 @@ def last_day_gain(row,unit):
     data=row['data']
     return (float(data[0]['nav']) - float(data[1]['nav']))*unit
 
-mfData=dict()
 
 def get_gain(row):
     today=datetime.datetime.today()
@@ -188,7 +188,7 @@ def evaluate():
     holdings=addSIP(today,holdings)
     holdings[['monthly_gain','yearly_gain','incPercent','yrIncPercent','recentInc','pastInc','lastDGain']]=holdings.apply(get_gain,axis=1,result_type="expand")
     print(f'total monthly gain {round(sum(holdings["monthly_gain"])/1000.0,2)}k ,yearly gain {round(sum(holdings["yearly_gain"])/1000.0,2)}k')
-    holdings.to_csv('allfunds_gain.csv')
+    #holdings.to_csv('allfunds_gain.csv')
     #deleteall()
     storeDF.storeDF(holdings)
     
