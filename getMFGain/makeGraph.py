@@ -107,16 +107,23 @@ def add_level(text):
 
 def generate_html():
     today=datetime.datetime.today()
-    blob = BlobClient.from_connection_string(conn_str="DefaultEndpointsProtocol=https;AccountName=storageaccayan;AccountKey=fsU3Fi6rIjLERjfLoet87EV97VPh7VllnoRE3DgZYRcnLJAqbuJxnX2hIuJkMTGJfdgnljoSSlWTowHHRTQX2A==;EndpointSuffix=core.windows.net",
-        container_name="mf-portfolio", blob_name='mf_'+str(today.year)+'-'+str(today.month)+'-'+str(today.day)+'.csv')
-    stream = blob.download_blob()
-    data =stream.readall()
-    s=str(data,'utf-8')
-    
-    data = StringIO(s) 
-    
-    hold=pd.read_csv(data)
-    
+    for i in range(3):
+        try:
+            blob = BlobClient.from_connection_string(conn_str="DefaultEndpointsProtocol=https;AccountName=storageaccayan;AccountKey=fsU3Fi6rIjLERjfLoet87EV97VPh7VllnoRE3DgZYRcnLJAqbuJxnX2hIuJkMTGJfdgnljoSSlWTowHHRTQX2A==;EndpointSuffix=core.windows.net",
+                container_name="mf-portfolio", blob_name='mf_'+str(today.year)+'-'+str(today.month)+'-'+str(today.day)+'.csv')
+            stream = blob.download_blob()
+            data =stream.readall()
+            s=str(data,'utf-8')
+            
+            data = StringIO(s) 
+            
+            hold=pd.read_csv(data)
+            break
+        except:
+            today=today-datetime.timedelta(days=i+1)
+            continue
+            
+        
     agg=hold.groupby(by='fundName').aggregate({'monthly_gain':'sum','incPercent':'first','recentInc':'first',
                     'pastInc':'first'}).reset_index()
     p1=plot_increase(agg,'monthly_gain',"Monthly increase")
@@ -140,7 +147,8 @@ def generate_html():
     curdoc().theme = 'dark_minimal'
     doc.validate()
     
-    filename = "MF_analysisV1.html"#
+    filename = "/tmp/MF_analysisV1.html"#
     with open(filename, "w", encoding="utf-8") as f:
         f.write(file_html(doc, INLINE,'MF_analysis'))
     print("Wrote %s" % filename)
+    return filename

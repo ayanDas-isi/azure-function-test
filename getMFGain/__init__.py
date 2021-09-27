@@ -1,24 +1,19 @@
 import logging
-
+import mimetypes
 import azure.functions as func
-
+from . import makeGraph
+import traceback
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
-
-    name = req.params.get('name')
-    if not name:
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            pass
-        else:
-            name = req_body.get('name')
-
-    if name:
-        return func.HttpResponse(f"Hello, {name}. This HTTP triggered function executed successfully.")
-    else:
+    try:
+        fpath=makeGraph.generate_html()
+        with open(fpath, 'rb') as f:
+                mimetype = mimetypes.guess_type(fpath)
+                return func.HttpResponse(f.read(), mimetype=mimetype[0])
+    except:
+        
         return func.HttpResponse(
-             "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",
-             status_code=200
-        )
+                 str(traceback.format_exc()),
+                 status_code=400
+            )
