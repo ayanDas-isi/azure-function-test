@@ -129,10 +129,11 @@ def generate_html():
     p1=plot_increase(agg,'monthly_gain',"Monthly increase")
     p2=plot_increase(agg,'incPercent',"Monthly increase %")
     p3=categorical_plot(agg)
+    l0=add_level('Report date:'+str(today.year)+'-'+str(today.month)+'-'+str(today.day))
     l1=add_level(f'this year gain:{int(sum(hold["yearly_gain"])/1000)}k')
     l2=add_level(f'this month gain:{int(sum(hold["monthly_gain"])/1000)}k')
     l3=add_level(f'today\'s gain:{int(sum(hold["lastDGain"]))}')
-    rowLevel=row(l1,l2,l3,sizing_mode="scale_width")
+    rowLevel=row(l0,l1,l2,l3,sizing_mode="scale_width")
     
     plotlist= gridplot([[rowLevel],[p1],[p2],[p3]], toolbar_location=None)
     
