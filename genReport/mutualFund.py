@@ -8,11 +8,17 @@ import pandas as pd
 from mftool import Mftool
 import datetime
 import json
-from .daoLayer import pull_data
+try:
+    from .daoLayer import pull_data
+except:
+    from daoLayer import pull_data
 import os
 import glob
-from . import storeDF
 
+try:
+    from . import storeDF
+except:
+    import storeDF
 def deleteall():
     files = glob.glob('./nav/')
     for f in files:
@@ -42,14 +48,14 @@ def get_nav_val(cd):
     return data
 
 def get_start_nav(today,data,startDate):  
-    nav=0
+    nav=float(data['data'][0]['nav'])
     if today<startDate:
         return 0,0
     endNAV=None
     #print(monthStart)
     for dtval in data['data']:
         thisDate = datetime.datetime.strptime(dtval['date'], '%d-%m-%Y')
-        #print(thisDate,monthStart)
+        #print(thisDate,today)
         if thisDate<today and endNAV==None:
             endNAV=float(dtval['nav'])
         if thisDate<startDate:
@@ -93,7 +99,7 @@ def addSIP(calcDate,holdings):
             sipList.append({'code':row['code'],'fundName':row['fundName'],'purchaseDate':addDate.strftime('%d-%m-%Y'),
                             'type':'A','units':get_date_unit(addDate,row['code'],5000)})
             startDate=addDate
-            print(startDate,row['code'])
+            #print(startDate,row['code'])
     sipList=pd.DataFrame(sipList)
     holdings=pd.concat([holdings,sipList])
     #holdings.to_csv('holdings_sip.csv')
@@ -145,7 +151,8 @@ def get_gain(row):
        
     else:
         yrStartNAV,x=get_start_nav(today,data,purDate)
-    #print()
+    #print(startNAV,yrStartNAV)
+    #yearGainPercent=0
     return (curNAV-startNAV)*row['units'],(curNAV-yrStartNAV)*row['units'], 100*(curNAV-startNAV)/startNAV,100*(curNAV-yrStartNAV)/yrStartNAV,recentInc,pastInc,lastDGain
 
 def get_monthly_gain(row,evalDate):
