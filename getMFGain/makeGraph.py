@@ -31,14 +31,20 @@ from io import StringIO
 from bokeh.io import show, output_file
 from bokeh.plotting import figure
 from bokeh.models import Range1d
+from bokeh.palettes import Spectral6
 #output_file("bar_basic.html")
 
+color_code=['#68FF33','#33DCFF','#33B3FF','#5033FF','#C8FF33','#DB33FF','#1F84AF']
+color_code.extend(Spectral6)
 def plot_increase(agg,yVal,title):
     #hold=hold[hold['monthly_gain']>0]
     
 
     hold=agg.sort_values(by=yVal,ascending=False)
     hold['fundName']=hold['fundName'].apply(lambda x: x.split('-')[0])
+    hold['comp']=hold['fundName'].apply(lambda x: x.split(' ')[0])
+    colorDic={com:color_code[i] for i,com in enumerate(set(hold['comp']))}
+    hold['color']=hold['comp'].apply(lambda x: colorDic[x])
     src = ColumnDataSource(hold)
     
     valList=list(agg[yVal])
@@ -47,7 +53,7 @@ def plot_increase(agg,yVal,title):
                sizing_mode="stretch_width",
                toolbar_location=None, tools="")
     
-    p.vbar(x='fundName',source=src, top=yVal, width=0.9)
+    p.vbar(x='fundName',source=src, top=yVal, width=0.9, color='color',legend="comp")
     
     p.xgrid.grid_line_color = None
     p.y_range.start = 0
@@ -126,6 +132,7 @@ def generate_html():
         
     agg=hold.groupby(by='fundName').aggregate({'monthly_gain':'sum','incPercent':'first','recentInc':'first',
                     'pastInc':'first'}).reset_index()
+    #return agg
     p1=plot_increase(agg,'monthly_gain',"Monthly increase")
     p2=plot_increase(agg,'incPercent',"Monthly increase %")
     p3=categorical_plot(agg)
