@@ -8,10 +8,17 @@ import pandas as pd
 from mftool import Mftool
 import datetime
 import json
-from .daoLayer import pull_data
+try:
+    from .daoLayer import pull_data,create_update_list,bulk_update
+except:
+    from daoLayer import pull_data,create_update_list,bulk_update
 import os
 import glob
-from . import storeDF
+
+try:
+    from . import storeDF
+except:
+    import storeDF
 
 def deleteall():
     files = glob.glob('./nav/')
@@ -149,16 +156,18 @@ def get_gain(row):
     return (curNAV-startNAV)*row['units'],(curNAV-yrStartNAV)*row['units'], 100*(curNAV-startNAV)/startNAV,100*(curNAV-yrStartNAV)/yrStartNAV,recentInc,pastInc,lastDGain
 
 def get_monthly_gain(row,evalDate):
+    today=datetime.datetime.today()
     thisMonthStart=datetime.datetime(evalDate.year,evalDate.month,1)
-    path='./nav/data_'+str(row['code'])+'_'+str(today.date())+'.json'
-    purDate = datetime.datetime.strptime(row['purchaseDate'], '%d-%m-%Y')
-    if os.path.exists(path)==True:
-        f = open(path)
-        data = json.load(f)
+    path='data_'+str(row['code'])+'_'+str(today.date())
+    if type(row['purchaseDate'])==str:
+        purDate = datetime.datetime.strptime(row['purchaseDate'], '%d-%m-%Y')
+    else:
+        purDate=row['purchaseDate']
+    if path in mfData.keys():
+        data = mfData[path]
     else:
         data = obj.get_scheme_historical_nav(code=row['code'])
-        with open(path, 'w') as f:
-            json.dump(data, f)
+        mfData[path]=data
     #print(row['fundName'])
     #if evalDate.month>purDate.month or evalDate.year >purDate.year:
     if thisMonthStart>purDate:
@@ -192,3 +201,25 @@ def evaluate():
     #deleteall()
     storeDF.storeDF(holdings)
     
+    
+def evaluate_monthly_gain():
+    a=[{'$project':{'gainList':0,'_id':0}}]
+    holdings=pd.DataFrame(pull_data(a,'holdings'))
+    
+    monthGainList=[]
+    today=datetime.datetime.today()
+    for i in range(2,13):
+        monthEnd=datetime.datetime(today.year,i,1)-datetime.timedelta(days=1)
+        print(i)
+        if monthEnd>today:
+            break
+        holdingsMonth=addSIP(monthEnd,holdings)
+        holdingsMonth['monthly_gain']=holdingsMonth.apply(get_monthly_gain,evalDate=monthEnd,axis=1)
+        agg=holdingsMonth.groupby(by='code').aggregate({'monthly_gain':'sum'}).reset_index()
+        fundWise=[{'fundCode':int(row['code']),'monthlyGain':row['monthly_gain']} for i,row in agg.iterrows()]
+        #monthGainList.append({'endDate':monthEnd,'gain':sum(holdingsMonth['monthly_gain']),'fundwise':fundWise})
+        monthGainList=create_update_list({'endDate':monthEnd},{'$set':{'gain':sum(holdingsMonth['monthly_gain']),'fundwise':fundWise}},monthGainList,True)
+    #monthwise= pd.DataFrame(monthGainList)
+    #storeDF.storeDF(monthwise,ftype='monthwise_')
+    a=bulk_update(monthGainList,'monthlyMFGain')
+    print(a.bulk_api_result)

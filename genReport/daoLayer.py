@@ -68,13 +68,16 @@ def bulk_update(updatelist,tablename):
     return result
 
 def insert_holdings():
-    df=pd.read_csv('allfunds.csv')
+    df=holdings#pd.read_csv('allfunds.csv')
     hold=[]
     for i,row in df.iterrows():
+        hold=create_update_list({'code':row['code']},
+                                 {'$set':{'category':a[1][str(row['code'])]}},hold,up_sert=True)
+        continue
         hold=create_update_list({'code':row['code'],'purchaseDate':datetime.datetime.strptime(row['purchaseDate'], '%d-%m-%Y')},
                                  {'$set':{'fundName':row['fundName'],'units':row['units'],'gainList':[],'invType':row['type']}},hold,up_sert=True)
-    a=bulk_update(hold,'holdings')
-    print(a.bulk_api_result)
+    ax=bulk_update(hold,'holdings')
+    print(ax.bulk_api_result)
     
 #insert_holdings()
     

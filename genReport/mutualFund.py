@@ -97,7 +97,7 @@ def addSIP(calcDate,holdings):
             if addDate>=calcDate:
                 break
             sipList.append({'code':row['code'],'fundName':row['fundName'],'purchaseDate':addDate.strftime('%d-%m-%Y'),
-                            'type':'A','units':get_date_unit(addDate,row['code'],5000)})
+                            'type':'A','units':get_date_unit(addDate,row['code'],5000),'category':row['category']})
             startDate=addDate
             #print(startDate,row['code'])
     sipList=pd.DataFrame(sipList)
@@ -186,6 +186,20 @@ for i in range(2,10):
 
 holdings.to_csv('allfunds_monthly.csv')
 '''
+def categorize_fund():
+    a=[{'$project':{'gainList':0,'_id':0}}]
+    holdings=pd.DataFrame(pull_data(a,'holdings'))
+    categories=dict()
+    codeCat=dict()
+    for code in set(holdings['code']):
+        a=obj.get_scheme_details(str(int(code)))
+        codeCat[str(int(code))]=a['scheme_category'] 
+        if a['scheme_category'] in categories:
+            categories[a['scheme_category']].append(a)
+        else:
+            categories[a['scheme_category']]=[a]
+    return categories,codeCat
+
 def evaluate():
     a=[{'$project':{'gainList':0,'_id':0}}]
     holdings=pd.DataFrame(pull_data(a,'holdings'))

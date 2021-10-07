@@ -23,7 +23,10 @@ from azure.storage.blob import BlobClient
 import datetime
 from io import StringIO
 
-
+try:
+    from . import pull_mongo
+except:
+    import pull_mongo
 
 #hold=pd.read_csv('allfunds_gain.csv')
 
@@ -69,7 +72,18 @@ def plot_increase(agg,yVal,title):
     #show(p)
     return p
 
-def categorical_plot(holding):
+def form_lineGraph(gainList,dateList):
+    fig = figure(title='Monthly Gain',
+             x_axis_label='x',
+             y_axis_label='y',
+             sizing_mode="stretch_width",
+             height=450,x_axis_type='datetime')
+    fig.line(dateList,gainList, legend='Monthly Gain', color='blue', line_width=2)
+    fig.circle(dateList,gainList, legend='Monthly Gain', color='blue', fill_color='white', size=5)
+    return fig
+
+def categorical_plot(holding,colorMap):
+    codeCate=dict(zip(holding.fundName, holding.category))
     holding['perInc']=holding['recentInc']-holding['pastInc']
     holding=holding.sort_values(by='perInc',ascending=False)
     fruits =list(holding['fundName'])# ['Apples', 'Pears', 'Nectarines', 'Plums', 'Grapes', 'Strawberries']
@@ -81,19 +95,24 @@ def categorical_plot(holding):
     
     # this creates [ ("Apples", "2015"), ("Apples", "2016"), ("Apples", "2017"), ("Pears", "2015), ... ]
     x = [ (fruit, year) for fruit in fruits for year in years ]
+    color=[colorMap[codeCate[fundName]] for (fundName,y) in x]
     counts = sum(zip(data['recentInc'], data['pastInc']), ()) # like an hstack
+    #colorDic={com:color_code[i] for i,com in enumerate(set(hold['comp']))}
+    legends=[codeCate[fundName].replace('Fund','') for (fundName,y) in x]
+    source = ColumnDataSource(data=dict(x=x, counts=counts,colors=color,legend=legends))
     
-    source = ColumnDataSource(data=dict(x=x, counts=counts))
-    
-    p = figure(x_range=FactorRange(*x), height=250, title="increase difference",
+    p = figure(x_range=FactorRange(*x), height=300, title="increase difference",
                toolbar_location=None, tools="",sizing_mode="stretch_width")
     
-    p.vbar(x='x', top='counts', width=0.9, source=source)
+    p.vbar(x='x', top='counts', width=0.9, source=source,fill_color='colors',legend="legend")
     
     p.y_range.start = 0
     p.x_range.range_padding = 0.1
     p.xaxis.major_label_orientation = 1
     p.xgrid.grid_line_color = None
+    p.legend.location = "top_right"
+    p.legend.orientation = "horizontal"
+
     hover = HoverTool(
         tooltips=[
          ("fund", '@x'),
@@ -102,7 +121,7 @@ def categorical_plot(holding):
         ) 
     hover.mode = 'mouse'
     p.add_tools(hover)
-    p.y_range = Range1d(min([min(data['recentInc']),min(data['pastInc'])]),max([max(data['recentInc']),max(data['pastInc'])]))
+    p.y_range = Range1d(min([min(data['recentInc']),min(data['pastInc'])])-0.01,max([max(data['recentInc']),max(data['pastInc'])])+0.02)
     return p
 
 def add_level(text):
@@ -131,18 +150,23 @@ def generate_html():
             
         
     agg=hold.groupby(by='fundName').aggregate({'monthly_gain':'sum','incPercent':'first','recentInc':'first',
-                    'pastInc':'first'}).reset_index()
+                    'pastInc':'first','category':'first'}).reset_index()
     #return agg
+    colorMap={cate:color_code[i%len(color_code)] for i,cate in enumerate(list(agg['category']))}
     p1=plot_increase(agg,'monthly_gain',"Monthly increase")
     p2=plot_increase(agg,'incPercent',"Monthly increase %")
-    p3=categorical_plot(agg)
+    p3=categorical_plot(agg,colorMap)
+    
+    a=pull_mongo.pull_data([{'$project':{'_id':0,'fundwise':0}},{'$sort':{'endDate':1}}],'monthlyMFGain')
+    p4=form_lineGraph([data['gain'] for data in a],[data['endDate'] for data in a])
+    
     l0=add_level('Report date:'+str(today.year)+'-'+str(today.month)+'-'+str(today.day))
     l1=add_level(f'this year gain:{int(sum(hold["yearly_gain"])/1000)}k')
     l2=add_level(f'this month gain:{int(sum(hold["monthly_gain"])/1000)}k')
     l3=add_level(f'today\'s gain:{int(sum(hold["lastDGain"]))}')
     rowLevel=row(l0,l1,l2,l3,sizing_mode="scale_width")
     
-    plotlist= gridplot([[rowLevel],[p1],[p2],[p3]], toolbar_location=None)
+    plotlist= gridplot([[rowLevel],[p1],[p2],[p4],[p3]], toolbar_location=None)
     
     div = Div(text="""
         <h1>Performance analysis</h1>
