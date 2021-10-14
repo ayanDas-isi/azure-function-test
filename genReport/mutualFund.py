@@ -72,11 +72,11 @@ def get_date_unit(today,code,amount):
     else:
         data = obj.get_scheme_historical_nav(code=code)
         mfData[path]=data
-    nav=0
+    nav=float(data['data'][0]['nav'])
     #print(monthStart)
     for dtval in data['data']:
         thisDate = datetime.datetime.strptime(dtval['date'], '%d-%m-%Y')
-        print(thisDate,today)
+        print(thisDate,today,code)
         
         if thisDate<today:
             #print('returning ',dtval)
@@ -211,5 +211,5 @@ def evaluate():
     print(f'total monthly gain {round(sum(holdings["monthly_gain"])/1000.0,2)}k ,yearly gain {round(sum(holdings["yearly_gain"])/1000.0,2)}k')
     #holdings.to_csv('allfunds_gain.csv')
     #deleteall()
-    storeDF.storeDF(holdings)
+    storeDF.fn_storeDF(holdings)
     

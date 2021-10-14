@@ -67,19 +67,27 @@ def bulk_update(updatelist,tablename):
     #print(result)
     return result
 
-def insert_holdings():
+def insert_holdings(holdings):
     df=holdings#pd.read_csv('allfunds.csv')
     hold=[]
     for i,row in df.iterrows():
-        hold=create_update_list({'code':row['code']},
-                                 {'$set':{'category':a[1][str(row['code'])]}},hold,up_sert=True)
-        continue
+        #hold=create_update_list({'code':row['code']},
+        #                         {'$set':{'category':a[1][str(row['code'])]}},hold,up_sert=True)
+        #continue
         hold=create_update_list({'code':row['code'],'purchaseDate':datetime.datetime.strptime(row['purchaseDate'], '%d-%m-%Y')},
                                  {'$set':{'fundName':row['fundName'],'units':row['units'],'gainList':[],'invType':row['type']}},hold,up_sert=True)
     ax=bulk_update(hold,'holdings')
     print(ax.bulk_api_result)
     
 #insert_holdings()
+'''
+a=[{'code':149134,'purchaseDate':'07-10-2021','fundName':'SBI Balanced Advantage Fund - Direct Plan - Growth',
+    'units':3428.848,'type':'L'},
+    {'code':125354,'purchaseDate':'06-10-2021','fundName':'Axis Small Cap Fund - Direct Plan - Growth',
+    'units':453.9,'type':'L'}]
+
+insert_holdings(pd.DataFrame(a))
+'''
     
 def insert_gain():
     df=pd.read_csv('allfunds.csv')
